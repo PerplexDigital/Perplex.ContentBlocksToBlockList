@@ -55,6 +55,7 @@ public class ContentBlocksToBlockListMigrationsComponent
     (
         IMigrationContext context,
         IContentTypeService contentTypeService,
+        IEventAggregator eventAggregator,
         ILogger<MigrateFromContentBlocksToBlockList> logger
     ) : AsyncMigrationBase(context)
     {
@@ -230,6 +231,8 @@ public class ContentBlocksToBlockListMigrationsComponent
                         },
                     };
 
+                    eventAggregator.Publish(new MigratedContentBlocksPropertyValueNotification(node, value));
+
                     return true;
 
                     void MigrateBlockData_v4(JsonObject content)
@@ -240,7 +243,7 @@ public class ContentBlocksToBlockListMigrationsComponent
                             RegisterContentBlockElementTypeKey(contentTypeKey);
                         }
 
-                        var key = content["key"]?.ToString();
+                        var key = content["key"]?.GetValue<Guid>();
 
                         layouts.Add(new JsonObject
                         {
@@ -280,6 +283,9 @@ public class ContentBlocksToBlockListMigrationsComponent
                 }
 
                 value = MigrateNestedContentToBlockList(ncArray, RegisterContentBlockElementTypeKey);
+
+                eventAggregator.Publish(new MigratedContentBlocksPropertyValueNotification(node, value));
+
                 return true;
 
                 void RegisterContentBlockElementTypeKey(Guid contentTypeKey)
@@ -390,7 +396,7 @@ public class ContentBlocksToBlockListMigrationsComponent
 
                     var values = MigrateValues(ncContent, contentType);
 
-                    var key = ncContent["key"]?.ToString();
+                    var key = ncContent["key"]?.GetValue<Guid>();
 
                     layouts.Add(new JsonObject
                     {

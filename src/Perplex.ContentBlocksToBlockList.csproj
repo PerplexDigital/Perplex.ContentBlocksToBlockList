@@ -6,13 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <DebugType>embedded</DebugType>
-    <NoWarn>$(NoWarn);NU1903;CS1591</NoWarn>
+    <NoWarn>$(NoWarn);NU1902;NU1903;CS1591</NoWarn>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package">
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Company>Perplex Digital</Company>
     <Authors>$(Company)</Authors>

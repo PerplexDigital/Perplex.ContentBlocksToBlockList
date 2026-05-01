@@ -14,9 +14,50 @@ When the migration is completed, Perplex.ContentBlocks will no longer be used in
 
 NOTE: You do not need to have Perplex.ContentBlocks installed to run this package; it does not depend on it. In fact, it is recommended to uninstall Perplex.ContentBlocks, since there is no reason to keep it installed.
 
+### IPropertyValueMigrator
+
+If you need to customize how individual property values within blocks are migrated, implement `IPropertyValueMigrator`. This is the easiest way to hook into the migration. It is called per property with the original value, property type, and content type, allowing you to return a custom migrated value for specific properties.
+
+```csharp
+public class MyPropertyValueMigratorComposer : IComposer
+{
+    public void Compose(IUmbracoBuilder builder)
+    {
+        builder.Services.AddSingleton<IPropertyValueMigrator, MyPropertyValueMigrator>();
+    }
+}
+
+public class MyPropertyValueMigrator : IPropertyValueMigrator
+{
+    public bool MigratePropertyValue(JsonNode? originalValue, IPropertyType propertyType, IContentType contentType, out JsonNode? migratedValue)
+    {
+        // Only handle a specific property editor or alias
+        if (propertyType.PropertyEditorAlias != "My.CustomEditor")
+        {
+            migratedValue = null;
+            return false;
+        }
+
+        // Perform your custom migration
+        migratedValue = TransformValue(originalValue);
+        return true;
+    }
+
+    private JsonNode? TransformValue(JsonNode? originalValue)
+    {
+        // Your custom migration logic here
+        return originalValue?.DeepClone();
+    }
+}
+```
+
+Multiple migrators can be registered. They run in order after the default migration, and the last one returning `true` wins.
+
+Note: this hook only applies to the Nested Content (v1-v3) migration path. Version 4 data has already been migrated by ContentBlocks itself, which had its own `IContentBlocksPropertyValueMigrator` hook.
+
 ### NotificationHandler
 
-If you want to perform some custom migration actions during the migration you can handle the `MigratedContentBlocksPropertyValueNotification` that is sent after we migrate a Perplex.ContentBlocks property value to Umbraco.BlockList. The notification contains the raw `JsonNode` values of the ContentBlocks property value and the migrated BlockList value. This notification is sent before the BlockList property value is persisted to the database so you can update its value directly in your notification handler to make changes if desired.
+For more advanced scenarios where you need to modify the entire migrated BlockList value (not just individual properties), you can handle the `MigratedContentBlocksPropertyValueNotification`. This is a lower-level hook that is sent after a full Perplex.ContentBlocks property value has been migrated to Umbraco.BlockList. The notification contains the raw `JsonNode` values of both the original ContentBlocks value and the migrated BlockList value. It is sent before the value is persisted to the database so you can update it directly.
 
 Note this is quite a low-level notification giving you the raw `JsonNode` instances so you will need to perform some parsing yourself. See the example below:
 

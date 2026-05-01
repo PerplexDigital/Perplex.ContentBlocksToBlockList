@@ -56,6 +56,7 @@ public class ContentBlocksToBlockListMigrationsComponent
         IMigrationContext context,
         IContentTypeService contentTypeService,
         IEventAggregator eventAggregator,
+        IEnumerable<IPropertyValueMigrator> propertyValueMigrators,
         ILogger<MigrateFromContentBlocksToBlockList> logger
     ) : AsyncMigrationBase(context)
     {
@@ -328,6 +329,15 @@ public class ContentBlocksToBlockListMigrationsComponent
 
                     var oldValue = content[property.Alias];
                     var newValue = MigrateValue(oldValue, property.PropertyEditorAlias);
+
+                    // Allow custom migrators to override the default migration
+                    foreach (var migrator in propertyValueMigrators)
+                    {
+                        if (migrator.MigratePropertyValue(oldValue, property, contentType, out var customValue))
+                        {
+                            newValue = customValue;
+                        }
+                    }
 
                     var value = new JsonObject
                     {
